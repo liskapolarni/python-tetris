@@ -81,6 +81,10 @@ class Brick:
         for (tx, ty) in self.get_brick_positions():
             game_map[self.x+tx][self.y+ty] = self.type
 
+    def push_down(self):
+        while not self.locked:
+            self.move(0,1)
+
 # create first brick
 brick = Brick()
 
@@ -123,6 +127,8 @@ while running:
                 brick.move_vector = (1,0)
             elif event.key == pygame.K_DOWN:
                 brick.move_vector = (0,1)
+            elif event.key == pygame.K_SPACE:
+                brick.push_down()
         elif event.type == pygame.KEYUP:
             if event.key in [pygame.K_LEFT, pygame.K_RIGHT, pygame.K_DOWN]:
                 brick.move_vector = (0,0)
