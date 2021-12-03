@@ -13,6 +13,10 @@ screen = pygame.display.set_mode((screen_width, screen_height))
 tiles_x, tiles_y = 10, 20
 tile_size = 30
 
+# game settings
+framerate = 60
+speed = 5
+
 # game map
 game_map = [[0 for y in range(20)] for x in range(10)]
 
@@ -27,13 +31,11 @@ class Brick:
 
         # movement
         self.locked = False
+        self.move_vector = (0,0)
 
         # brick position
         self.x = 3 if self.width >= 3 else 4
         self.y = 0
-
-    def place_brick(self):
-        pass
 
     def get_brick_positions(self):
         # loop through model, keep coordinates if tile's value isn't 0
@@ -110,21 +112,33 @@ while running:
 
         draw_tile(tx*tile_size, ty*tile_size, tile_color)
 
+    # check for keys
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LEFT:
-                brick.move(-1, 0)
+                brick.move_vector = (-1,0)
             elif event.key == pygame.K_RIGHT:
-                brick.move(1, 0)
+                brick.move_vector = (1,0)
+            elif event.key == pygame.K_DOWN:
+                brick.move_vector = (0,1)
+        elif event.type == pygame.KEYUP:
+            if event.key in [pygame.K_LEFT, pygame.K_RIGHT, pygame.K_DOWN]:
+                brick.move_vector = (0,0)
 
     rendered_frames += 1
-    if rendered_frames % 15 == 0:
+    if rendered_frames % (framerate / speed) == 0:
         brick.move(0, 1)
 
         if brick.locked:
             brick = Brick()
 
+    # apply movement
+    if rendered_frames % 5 == 0:
+        if brick.move_vector != (0,0):
+            (x, y) = brick.move_vector
+            brick.move(x, y)
+
     pygame.display.update()
-    clock.tick(60)
+    clock.tick(framerate)
