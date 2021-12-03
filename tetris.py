@@ -37,10 +37,12 @@ class Brick:
         self.x = 3 if self.width >= 3 else 4
         self.y = 0
 
-    def get_brick_positions(self):
-        # loop through model, keep coordinates if tile's value isn't 0
-        brick_positions = [(tile_x, tile_y) for tile_x in range(self.width) for tile_y in range(self.height) if self.model[tile_y][tile_x] != 0]
+    def get_brick_positions(self, model = False):
+        # use a custom model if passed in
+        loop_model = self.model if not model else model
 
+        # loop through model, keep coordinates if tile's value isn't 0
+        brick_positions = [(tile_x, tile_y) for tile_x in range(self.width) for tile_y in range(self.height) if loop_model[tile_y][tile_x] != 0]
         return brick_positions
 
     def move(self, x, y):
@@ -85,6 +87,34 @@ class Brick:
         while not self.locked:
             self.move(0,1)
 
+    def rotate(self):
+        # create a rotated model
+        rotated_model = [[self.model[y][x] for y in range(self.height)] for x in range(self.width)]
+        # reverse its rows in order to make it 90deg
+        rotated_model = [list(reversed(row)) for row in rotated_model]
+
+        # properties of rotated brick
+        rm_width, rm_height = len(rotated_model[0]), len(rotated_model)
+        width_diff, height_diff = self.width - rm_width, self.height - rm_height
+        new_x, new_y = self.x + width_diff, self.y + height_diff
+
+        # check if the rotation is possible
+        can_rotate = True
+
+        for rx in range(rm_width):
+            for ry in range(rm_height):
+                if new_x + rx >= 0 and new_x + rx < tiles_x and new_y + ry < tiles_y:
+                    if game_map[new_x + rx][new_y + ry] != 0:
+                        can_rotate = False
+                else:
+                    can_rotate = False
+
+        # if the rotation is possible, update brick's properties
+        if can_rotate:
+            self.width, self.height = rm_width, rm_height
+            self.x, self.y = new_x, new_y
+            self.model = rotated_model
+
 # create first brick
 brick = Brick()
 
@@ -127,6 +157,8 @@ while running:
                 brick.move_vector = (1,0)
             elif event.key == pygame.K_DOWN:
                 brick.move_vector = (0,1)
+            elif event.key == pygame.K_UP:
+                brick.rotate()
             elif event.key == pygame.K_SPACE:
                 brick.push_down()
         elif event.type == pygame.KEYUP:
