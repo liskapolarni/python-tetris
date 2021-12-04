@@ -198,9 +198,17 @@ class Text:
         self.text = text
         self.font_size = font_size
         self.font = pygame.font.Font('./fonts/inter.ttf', font_size)
+        self.color = color
 
         self.width, self.height = self.font.size(self.text)
-        self.surface = self.font.render(self.text, True, color)
+        self.update_surface()
+
+    def update_surface(self):
+        self.surface = self.font.render(self.text, True, self.color)
+
+    def set_text(self, text):
+        self.text = text
+        self.update_surface()
 
 next_brick_text = Text('Next brick:', 24)
 score_text = Text(f'Score: {score}', 20)
@@ -236,7 +244,7 @@ while running:
         draw_tile(nbox_x+(nx*tile_size)+10, nbox_y+(ny*tile_size)+10, next_brick.color)
 
     # score
-    score_text.text = f'Score: {score}'
+    score_text.set_text(f'Score: {score}')
     screen.blit(score_text.surface, (screen_width - 150 + ((150 - score_text.width) / 2), screen_height - 40))
 
     # draw the current brick
