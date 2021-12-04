@@ -17,6 +17,22 @@ tile_size = 30
 framerate = 60
 speed = 5
 
+# game variables
+class Score:
+    def __init__(self):
+        self.value = 0
+
+    def __str__(self):
+        return str(self.value)
+
+    def reset(self):
+        self.value = 0
+
+    def increase(self, value):
+        self.value += value
+
+score = Score()
+
 # game map
 class GameMap:
     def __init__(self):
@@ -42,13 +58,27 @@ class GameMap:
         # get all rows of the current map
         rows = self.get_rows()
 
+        full_rows = []
+
         # loop through the rows, check if any row is full
         for row_id, row in enumerate(rows):
             row_full = all(tile != 0 for tile in row)
 
-            # if the row is full, clear it
+            # if the row is full, add it to a clear list
             if row_full:
-                self.clear_row(row_id)
+                full_rows.append(row_id)
+
+        # clear marked rows
+        for row_id in full_rows:
+            self.clear_row(row_id)
+
+        # if any rows were deleted, increase the score
+        if len(full_rows) > 0:
+            score_add = 50
+            for multiplier in range(1, len(full_rows) + 1):
+                score_add *= multiplier
+            
+            score.increase(score_add)
 
 game_map = GameMap()
 
@@ -150,6 +180,9 @@ class Brick:
 # create first brick
 brick = Brick()
 
+# create next brick
+next_brick = Brick()
+
 # draw tile
 def draw_tile(x, y, color):
     pygame.draw.rect(screen, color, (x, y, tile_size, tile_size))
@@ -158,6 +191,9 @@ def draw_tile(x, y, color):
 clock = pygame.time.Clock()
 rendered_frames = 0
 running = True
+
+pygame.font.init()
+font = pygame.font.Font('./fonts/inter.ttf', 24)
 
 while running:
     # dark background
@@ -171,6 +207,24 @@ while running:
 
     # game and info divider
     pygame.draw.rect(screen, (255, 255, 255), (300, 0, 2, screen_height))
+
+    # next brick
+    nb_text = 'Next brick:'
+    nb_text_surface = font.render(nb_text, True, (255, 255, 255))
+    nb_text_width, nb_text_height = font.size(nb_text)
+    screen.blit(nb_text_surface, (screen_width - 150 + ((150 - nb_text_width) / 2), 10))
+
+    nbox_offset_x = ((150 - (next_brick.width * tile_size + 20)) / 2)
+    nbox_x, nbox_y = screen_width - 150 + nbox_offset_x, 50
+    pygame.draw.rect(screen, (255, 255, 255), (nbox_x, nbox_y, (next_brick.width*tile_size)+20, (next_brick.height*tile_size)+20), 1)
+    for (nx, ny) in next_brick.get_brick_positions():
+        draw_tile(nbox_x+(nx*tile_size)+10, nbox_y+(ny*tile_size)+10, next_brick.color)
+
+    # score
+    score_text = f'Score: {score}'
+    score_text_surface = font.render(score_text, True, (255, 255, 255))
+    score_text_width, score_text_height = font.size(score_text)
+    screen.blit(score_text_surface, (screen_width - 150 + ((150 - score_text_width) / 2), screen_height - 40))
 
     # draw the current brick
     for (tx, ty) in brick.get_brick_positions():
@@ -210,7 +264,8 @@ while running:
         brick.move(0, 1)
 
         if brick.locked:
-            brick = Brick()
+            brick = next_brick
+            next_brick = Brick()
 
     # apply movement
     if rendered_frames % (framerate / (speed * 4)) == 0:
