@@ -163,6 +163,12 @@ while running:
     # dark background
     screen.fill((0, 0, 0))
 
+    # grid
+    for gx in range(1, tiles_x):
+        pygame.draw.rect(screen, (50, 50, 50), (gx * tile_size, 0, 1, screen_height))
+    for gy in range(1, tiles_y):
+        pygame.draw.rect(screen, (50, 50, 50), (0, gy * tile_size, tiles_x * tile_size, 1))
+
     # game and info divider
     pygame.draw.rect(screen, (255, 255, 255), (300, 0, 2, screen_height))
 
