@@ -18,7 +18,39 @@ framerate = 60
 speed = 5
 
 # game map
-game_map = [[0 for y in range(20)] for x in range(10)]
+class GameMap:
+    def __init__(self):
+        self.map = [[0 for y in range(tiles_y)] for x in range(tiles_x)]
+
+    def __str__(self):
+        return self.map
+
+    def get_rows(self):
+        rows = [[self.map[x][y] for x in range(tiles_x)] for y in range(tiles_y)]
+        return rows
+
+    def clear_row(self, row_id):
+        # update rows
+        rows = self.get_rows()
+        rows.pop(row_id)
+        rows.insert(0, [0 for x in range(tiles_x)])
+
+        # change map based on new rows
+        self.map = [[rows[y][x] for y in range(tiles_y)] for x in range(tiles_x)]
+    
+    def check_rows(self):
+        # get all rows of the current map
+        rows = self.get_rows()
+
+        # loop through the rows, check if any row is full
+        for row_id, row in enumerate(rows):
+            row_full = all(tile != 0 for tile in row)
+
+            # if the row is full, clear it
+            if row_full:
+                self.clear_row(row_id)
+
+game_map = GameMap()
 
 # bricks
 class Brick:
@@ -55,7 +87,7 @@ class Brick:
                 for (bx, by) in self.get_brick_positions():
                     # if there's a placed tile below one of the bottom tiles, lock the brick
                     if self.x + bx < tiles_x and self.y + by + 1 < tiles_y:
-                        if game_map[self.x + bx][self.y + by + 1] != 0:
+                        if game_map.map[self.x + bx][self.y + by + 1] != 0:
                             tile_below = True
 
                 if not tile_below:
@@ -70,7 +102,7 @@ class Brick:
                 tile_sideby = False
 
                 for (sx, sy) in self.get_brick_positions():
-                    if game_map[self.x + sx + (1 if x > 0 else -1)][self.y + sy] != 0:
+                    if game_map.map[self.x + sx + (1 if x > 0 else -1)][self.y + sy] != 0:
                         tile_sideby = True
 
                 if not tile_sideby:
@@ -81,7 +113,7 @@ class Brick:
 
         # put the brick on game map
         for (tx, ty) in self.get_brick_positions():
-            game_map[self.x+tx][self.y+ty] = self.type
+            game_map.map[self.x+tx][self.y+ty] = self.type
 
     def push_down(self):
         while not self.locked:
@@ -104,7 +136,7 @@ class Brick:
         for rx in range(rm_width):
             for ry in range(rm_height):
                 if new_x + rx >= 0 and new_x + rx < tiles_x and new_y + ry < tiles_y:
-                    if game_map[new_x + rx][new_y + ry] != 0:
+                    if game_map.map[new_x + rx][new_y + ry] != 0:
                         can_rotate = False
                 else:
                     can_rotate = False
@@ -139,9 +171,9 @@ while running:
         draw_tile((brick.x+tx)*tile_size, (brick.y+ty)*tile_size, brick.color)
 
     # draw placed tiles
-    placed_tiles = [(tx, ty) for tx in range(tiles_x) for ty in range(tiles_y) if game_map[tx][ty] != 0]
+    placed_tiles = [(tx, ty) for tx in range(tiles_x) for ty in range(tiles_y) if game_map.map[tx][ty] != 0]
     for (tx, ty) in placed_tiles:
-        tile_type = game_map[tx][ty]
+        tile_type = game_map.map[tx][ty]
         tile_color = shapes.colors[tile_type]
 
         draw_tile(tx*tile_size, ty*tile_size, tile_color)
@@ -166,6 +198,8 @@ while running:
                 brick.move_vector = (0,0)
 
     rendered_frames += 1
+
+    # auto-move
     if rendered_frames % (framerate / speed) == 0:
         brick.move(0, 1)
 
@@ -173,10 +207,13 @@ while running:
             brick = Brick()
 
     # apply movement
-    if rendered_frames % 5 == 0:
+    if rendered_frames % (framerate / (speed * 4)) == 0:
         if brick.move_vector != (0,0):
             (x, y) = brick.move_vector
             brick.move(x, y)
+
+    # check for full rows, if any row is full, it is removed
+    game_map.check_rows()
 
     pygame.display.update()
     clock.tick(framerate)
