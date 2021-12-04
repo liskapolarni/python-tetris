@@ -200,15 +200,21 @@ class Text:
         self.font = pygame.font.Font('./fonts/inter.ttf', font_size)
         self.color = color
 
-        self.width, self.height = self.font.size(self.text)
         self.update_surface()
 
     def update_surface(self):
+        self.width, self.height = self.font.size(self.text)
         self.surface = self.font.render(self.text, True, self.color)
 
     def set_text(self, text):
         self.text = text
         self.update_surface()
+
+    def center_pos(self, start = 0, end = screen_width):
+        total_width = end - start
+        margin = (total_width - self.width) / 2
+        pos = start + margin
+        return pos
 
 next_brick_text = Text('Next brick:', 24)
 score_text = Text(f'Score: {score}', 20)
@@ -235,7 +241,7 @@ while running:
     pygame.draw.rect(screen, (255, 255, 255), (300, 0, 2, screen_height))
 
     # next brick
-    screen.blit(next_brick_text.surface, (screen_width - 150 + ((150 - next_brick_text.width) / 2), 10))
+    screen.blit(next_brick_text.surface, (next_brick_text.center_pos(300), 10))
 
     nbox_offset_x = ((150 - (next_brick.width * tile_size + 20)) / 2)
     nbox_x, nbox_y = screen_width - 150 + nbox_offset_x, 50
@@ -245,7 +251,7 @@ while running:
 
     # score
     score_text.set_text(f'Score: {score}')
-    screen.blit(score_text.surface, (screen_width - 150 + ((150 - score_text.width) / 2), screen_height - 40))
+    screen.blit(score_text.surface, (score_text.center_pos(300), screen_height - 40))
 
     # draw the current brick
     for (tx, ty) in brick.get_brick_positions():
@@ -297,6 +303,13 @@ while running:
 
     # check for full rows, if any row is full, it is removed
     game_map.check_rows()
+
+    # check if the game is over
+    if game_map.is_full():
+        screen.fill((0, 0, 0))
+        game_over_text = Text('Game over!', 48)
+        screen.blit(game_over_text.surface, (game_over_text.center_pos(), 20))
+        screen.blit(score_text.surface, (score_text.center_pos(), 80))
 
     pygame.display.update()
     clock.tick(framerate)
