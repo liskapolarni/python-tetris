@@ -37,6 +37,7 @@ score = Score()
 class GameMap:
     def __init__(self):
         self.map = [[0 for y in range(tiles_y)] for x in range(tiles_x)]
+        self.full = False
 
     def __str__(self):
         return self.map
@@ -79,6 +80,10 @@ class GameMap:
                 score_add *= multiplier
             
             score.increase(score_add)
+
+    def is_full(self):
+        top_row = self.get_rows()[0]
+        return top_row.count(0) != tiles_x
 
 game_map = GameMap()
 
@@ -187,6 +192,19 @@ next_brick = Brick()
 def draw_tile(x, y, color):
     pygame.draw.rect(screen, color, (x, y, tile_size, tile_size))
 
+# text
+class Text:
+    def __init__(self, text, font_size, color = (255, 255 ,255)):
+        self.text = text
+        self.font_size = font_size
+        self.font = pygame.font.Font('./fonts/inter.ttf', font_size)
+
+        self.width, self.height = self.font.size(self.text)
+        self.surface = self.font.render(self.text, True, color)
+
+next_brick_text = Text('Next brick:', 24)
+score_text = Text(f'Score: {score}', 20)
+
 # game loop
 clock = pygame.time.Clock()
 rendered_frames = 0
@@ -209,10 +227,7 @@ while running:
     pygame.draw.rect(screen, (255, 255, 255), (300, 0, 2, screen_height))
 
     # next brick
-    nb_text = 'Next brick:'
-    nb_text_surface = font.render(nb_text, True, (255, 255, 255))
-    nb_text_width, nb_text_height = font.size(nb_text)
-    screen.blit(nb_text_surface, (screen_width - 150 + ((150 - nb_text_width) / 2), 10))
+    screen.blit(next_brick_text.surface, (screen_width - 150 + ((150 - next_brick_text.width) / 2), 10))
 
     nbox_offset_x = ((150 - (next_brick.width * tile_size + 20)) / 2)
     nbox_x, nbox_y = screen_width - 150 + nbox_offset_x, 50
@@ -221,10 +236,8 @@ while running:
         draw_tile(nbox_x+(nx*tile_size)+10, nbox_y+(ny*tile_size)+10, next_brick.color)
 
     # score
-    score_text = f'Score: {score}'
-    score_text_surface = font.render(score_text, True, (255, 255, 255))
-    score_text_width, score_text_height = font.size(score_text)
-    screen.blit(score_text_surface, (screen_width - 150 + ((150 - score_text_width) / 2), screen_height - 40))
+    score_text.text = f'Score: {score}'
+    screen.blit(score_text.surface, (screen_width - 150 + ((150 - score_text.width) / 2), screen_height - 40))
 
     # draw the current brick
     for (tx, ty) in brick.get_brick_positions():
@@ -263,7 +276,8 @@ while running:
     if rendered_frames % (framerate / speed) == 0:
         brick.move(0, 1)
 
-        if brick.locked:
+        # check if it is possible to generate a new brick
+        if brick.locked and not game_map.is_full():
             brick = next_brick
             next_brick = Brick()
 
